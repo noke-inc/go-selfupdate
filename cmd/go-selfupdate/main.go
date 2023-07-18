@@ -61,7 +61,7 @@ func newGzReader(r io.ReadCloser) io.ReadCloser {
 }
 
 func createUpdate(path string, platform string) {
-	fmt.Println("createUpdate ", genDir)
+	fmt.Println("createUpdate " + genDir)
 	var c []current
 	files, err := ioutil.ReadDir(genDir)
 	if err != nil {
