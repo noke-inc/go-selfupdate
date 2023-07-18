@@ -239,8 +239,10 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 		if err != nil {
 			if err == ErrHashMismatch {
 				log.Println("update: hash mismatch from full binary")
+				glog.Debug("update: hash mismatch from full binary")
 			} else {
 				log.Println("update: fetching full binary,", err)
+				glog.Debug("update: fetching full binary,", err)
 			}
 			return err
 		}
@@ -251,16 +253,21 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 	// it can't be renamed if a handle to the file is still open
 	old.Close()
 
+	glog.Debug("Hi there update after close")
 	err, errRecover := fromStream(bytes.NewBuffer(bin))
 	if errRecover != nil {
+		glog.Debug("Hi there update err1")
 		return fmt.Errorf("update and recovery errors: %q %q", err, errRecover)
 	}
 	if err != nil {
+		glog.Debug("Hi there update err2")
 		return err
 	}
 
 	// update was successful, run func if set
+	glog.Debug("Hi there update check")
 	if u.OnSuccessfulUpdate != nil {
+		glog.Debug("Hi there update success")
 		u.OnSuccessfulUpdate()
 	}
 
