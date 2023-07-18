@@ -70,7 +70,7 @@ func createUpdate(path string, platform string) {
 	fmt.Println("createUpdate")
 	for _, file := range files {
 		if file.IsDir() {
-			filePath := "./" + filepath.Join(genDir, file.Name())
+			filePath := filepath.Join(".", genDir, file.Name(), platform+".gz")
 			c = append(c, current{Version: file.Name(), Path: filePath, Sha256: generateSha256(filePath)})
 		}
 	}
