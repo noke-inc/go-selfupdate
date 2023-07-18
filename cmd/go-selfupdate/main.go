@@ -66,15 +66,17 @@ func createUpdate(path string, platform string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-
+	fmt.Println("createUpdate")
 	for _, file := range files {
 		if file.IsDir() {
 			filePath := "./" + filepath.Join(genDir, file.Name())
 			c = append(c, current{Version: file.Name(), Path: filePath, Sha256: generateSha256(filePath)})
 		}
 	}
+	fmt.Println("createUpdate")
 	c = append(c, current{Version: version, Path: path, Sha256: generateSha256(path)})
 
+	fmt.Println("createUpdate")
 	b, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
 		fmt.Println("error:", err)
@@ -84,8 +86,10 @@ func createUpdate(path string, platform string) {
 		panic(err)
 	}
 
+	fmt.Println("createUpdate")
 	os.MkdirAll(filepath.Join(genDir, version), 0755)
 
+	fmt.Println("createUpdate")
 	var buf bytes.Buffer
 	w := gzip.NewWriter(&buf)
 	f, err := ioutil.ReadFile(path)
@@ -99,7 +103,10 @@ func createUpdate(path string, platform string) {
 		fmt.Println("error:", err)
 	}
 
+	fmt.Println("createUpdate")
 	for _, file := range files {
+
+		fmt.Println("createUpdate range")
 		if !file.IsDir() {
 			continue
 		}
@@ -107,6 +114,7 @@ func createUpdate(path string, platform string) {
 			continue
 		}
 
+		fmt.Println("createUpdate range")
 		os.Mkdir(filepath.Join(genDir, file.Name(), version), 0755)
 
 		fName := filepath.Join(genDir, file.Name(), platform+".gz")
