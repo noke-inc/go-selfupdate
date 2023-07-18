@@ -69,8 +69,10 @@ func createUpdate(path string, platform string) {
 
 	c = append(c, current{Version: version, Path: path, Sha256: generateSha256(path)})
 	for _, file := range files {
-		filePath := filepath.Join(genDir, file.Name())
-		c = append(c, current{Version: file.Name(), Path: filePath, Sha256: generateSha256(filePath)})
+		if file.IsDir() {
+			filePath := filepath.Join(genDir, file.Name())
+			c = append(c, current{Version: file.Name(), Path: filePath, Sha256: generateSha256(filePath)})
+		}
 	}
 
 	b, err := json.MarshalIndent(c, "", "    ")
