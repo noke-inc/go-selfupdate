@@ -19,7 +19,6 @@ import (
 
 	"github.com/kr/binarydist"
 	"github.com/noke-inc/gateway-go/pkg/glogger"
-	"google.golang.org/grpc/grpclog/glogger"
 )
 
 const (
@@ -98,7 +97,8 @@ func canUpdate() (err error) {
 }
 
 // BackgroundRun starts the update check and apply cycle.
-func (u *Updater) BackgroundRun(glog glogger.Glogger) error {
+func (u *Updater) BackgroundRun() error {
+	glog := glogger.CreateGlogger()
 	glog.Debug("Hi there")
 	if err := os.MkdirAll(u.getExecRelativeDir(u.Dir), 0755); err != nil {
 		// fail
