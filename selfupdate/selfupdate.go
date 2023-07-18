@@ -97,8 +97,8 @@ func canUpdate() (err error) {
 }
 
 // BackgroundRun starts the update check and apply cycle.
-func (u *Updater) BackgroundRun() error {
-	glog := glogger.CreateGlogger()
+func (u *Updater) BackgroundRun(glog *glogger.Glogger) error {
+	// glog := glogger.CreateGlogger()
 	glog.Debug("Hi there")
 	if err := os.MkdirAll(u.getExecRelativeDir(u.Dir), 0755); err != nil {
 		// fail

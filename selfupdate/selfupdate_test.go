@@ -5,6 +5,8 @@ import (
 	"io"
 	"testing"
 	"time"
+
+	"github.com/noke-inc/gateway-go/pkg/glogger"
 )
 
 func TestUpdaterFetchMustReturnNonNilReaderCloser(t *testing.T) {
@@ -17,7 +19,8 @@ func TestUpdaterFetchMustReturnNonNilReaderCloser(t *testing.T) {
 	updater.CheckTime = 24
 	updater.RandomizeTime = 24
 
-	err := updater.BackgroundRun()
+	glog := glogger.CreateGlogger()
+	err := updater.BackgroundRun(glog)
 
 	if err != nil {
 		equals(t, "Fetch was expected to return non-nil ReadCloser", err.Error())
@@ -38,7 +41,8 @@ func TestUpdaterWithEmptyPayloadNoErrorNoUpdate(t *testing.T) {
 	updater.CheckTime = 24
 	updater.RandomizeTime = 24
 
-	err := updater.BackgroundRun()
+	glog := glogger.CreateGlogger()
+	err := updater.BackgroundRun(glog)
 	if err != nil {
 		t.Errorf("Error occurred: %#v", err)
 	}
@@ -66,7 +70,8 @@ func runTestTimeChecks(t *testing.T, mr *mockRequester, checkTime int, randomize
 	updater.CheckTime = checkTime
 	updater.RandomizeTime = randomizeTime
 
-	updater.BackgroundRun()
+	glog := glogger.CreateGlogger()
+	updater.BackgroundRun(glog)
 
 	if updater.WantUpdate() == expectUpdate {
 		t.Errorf("WantUpdate returned %v; want %v", updater.WantUpdate(), expectUpdate)
@@ -93,7 +98,8 @@ func TestUpdaterWithEmptyPayloadNoErrorNoUpdateEscapedPath(t *testing.T) {
 		})
 	updater := createUpdaterWithEscapedCharacters(mr)
 
-	err := updater.BackgroundRun()
+	glog := glogger.CreateGlogger()
+	err := updater.BackgroundRun(glog)
 	if err != nil {
 		t.Errorf("Error occurred: %#v", err)
 	}
