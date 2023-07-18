@@ -124,6 +124,14 @@ func createUpdate(path string, platform string) {
 	}
 }
 
+func makeAllUpdate() {
+	// files, err := ioutil.ReadDir(genDir)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	fmt.Println("makeAllUpdate")
+}
+
 func printUsage() {
 	fmt.Println("")
 	fmt.Println("Positional arguments:")
@@ -136,6 +144,7 @@ func createBuildDir() {
 }
 
 func main() {
+	fmt.Println("main")
 	outputDirFlag := flag.String("o", "public", "Output directory for writing updates")
 
 	var defaultPlatform string
@@ -149,6 +158,7 @@ func main() {
 	platformFlag := flag.String("platform", defaultPlatform,
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
 
+	fmt.Println("main")
 	flag.Parse()
 	if flag.NArg() < 2 {
 		flag.Usage()
@@ -156,6 +166,7 @@ func main() {
 		os.Exit(0)
 	}
 
+	fmt.Println("main")
 	platform := *platformFlag
 	appPath := flag.Arg(0)
 	version = flag.Arg(1)
@@ -163,12 +174,14 @@ func main() {
 
 	createBuildDir()
 
+	fmt.Println("main")
 	// If dir is given create update for each file
 	fi, err := os.Stat(appPath)
 	if err != nil {
 		panic(err)
 	}
 
+	fmt.Println("main")
 	if fi.IsDir() {
 		files, err := ioutil.ReadDir(appPath)
 		if err == nil {
@@ -179,5 +192,6 @@ func main() {
 		}
 	}
 
+	fmt.Println("main")
 	createUpdate(appPath, platform)
 }

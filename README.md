@@ -1,7 +1,7 @@
 # go-selfupdate
 
-[![GoDoc](https://godoc.org/github.com/sanbornm/go-selfupdate/selfupdate?status.svg)](https://godoc.org/github.com/sanbornm/go-selfupdate/selfupdate)
-![CI/CD](https://github.com/sanbornm/go-selfupdate/actions/workflows/ci.yml/badge.svg)
+[![GoDoc](https://godoc.org/github.com/noke-inc/go-selfupdate/selfupdate?status.svg)](https://godoc.org/github.com/noke-inc/go-selfupdate/selfupdate)
+![CI/CD](https://github.com/noke-inc/go-selfupdate/actions/workflows/ci.yml/badge.svg)
 
 Enable your Golang applications to self update.  Inspired by Chrome based on Heroku's [hk](https://github.com/heroku/hk).
 
@@ -15,11 +15,11 @@ Enable your Golang applications to self update.  Inspired by Chrome based on Her
 
 ### Install library and update/patch creation utility
 
-`go install github.com/sanbornm/go-selfupdate/cmd/go-selfupdate@latest`
+`go install github.com/noke-inc/go-selfupdate/cmd/go-selfupdate@latest`
 
 ### Enable your App to Self Update
 
-`go get -u github.com/sanbornm/go-selfupdate/...`
+`go get -u github.com/noke-inc/go-selfupdate/...`
 
 	var updater = &selfupdate.Updater{
 		CurrentVersion: version, // the current version of your app used to determine if an update is necessary
