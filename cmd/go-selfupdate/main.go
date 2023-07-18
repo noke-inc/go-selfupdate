@@ -67,7 +67,7 @@ func createUpdate(path string, platform string) {
 		fmt.Println(err)
 	}
 
-	c[0] = current{Version: version, Path: path, Sha256: generateSha256(path)}
+	c = append(c, current{Version: version, Path: path, Sha256: generateSha256(path)})
 	for _, file := range files {
 		filePath := filepath.Join(genDir, file.Name())
 		c = append(c, current{Version: version, Path: filePath, Sha256: generateSha256(filePath)})
