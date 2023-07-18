@@ -200,13 +200,17 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("main")
+	fmt.Println("main appPath: %v, platform: %v", appPath, platform)
 	if fi.IsDir() {
+		fmt.Println("main")
 		files, err := ioutil.ReadDir(appPath)
+		fmt.Println("main")
 		if err == nil {
 			for _, file := range files {
+				fmt.Println("main blah")
 				createUpdate(filepath.Join(appPath, file.Name()), file.Name())
 			}
+			fmt.Println("agh")
 			os.Exit(0)
 		}
 	}
