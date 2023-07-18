@@ -214,7 +214,7 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 		return nil
 	}
 
-	glog.Debug("Hi there update")
+	glog.Debug("Hi there update: Path: " + path)
 	old, err := os.Open(path)
 	if err != nil {
 		return err
@@ -332,18 +332,14 @@ func fromStream(updateWith io.Reader) (err error, errRecover error) {
 // fetchInfo fetches the update JSON manifest at u.ApiURL/appname/platform.json
 // and updates u.Info.
 func (u *Updater) fetchInfo(targetVersion string) error {
-	result := []Info{}
-	checkVersionUrl := u.ApiURL + u.CmdName + "/" + url.QueryEscape(plat) + ".json"
+	result := Info{}
+	checkVersionUrl := u.ApiURL + u.CmdName + "/" + targetVersion + "/" + url.QueryEscape(plat) + ".json"
 	err := readJSONFromUrl(checkVersionUrl, &result)
 	if err != nil {
 		return err
 	}
 
-	for _, lu := range result {
-		if lu.Version == targetVersion {
-			u.Info = lu
-		}
-	}
+	u.Info = result
 
 	if len(u.Info.Sha256) != sha256.Size {
 		return errors.New("bad cmd hash in info")

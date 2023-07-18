@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/kr/binarydist"
 )
@@ -62,35 +61,19 @@ func newGzReader(r io.ReadCloser) io.ReadCloser {
 }
 
 func createUpdate(path string, platform string) {
-	var c []current
+	var c current
 	files, err := ioutil.ReadDir(genDir)
 	if err != nil {
 		fmt.Println(err)
 	}
-	for _, file := range files {
-		if file.IsDir() {
-			filePath := filepath.Join(".", genDir, file.Name(), platform+".gz")
-			c = append(c, current{Version: file.Name(), Path: filePath, Sha256: generateSha256(filePath)})
-		}
-	}
-
-	// this makes sure we don't have multiple entries of the current version
-	var versionAlreadyExists bool = false
-	for _, v := range c {
-		if strings.EqualFold(version, v.Version) {
-			versionAlreadyExists = true
-		}
-	}
-	if !versionAlreadyExists {
-		c = append(c, current{Version: version, Path: path, Sha256: generateSha256(path)})
-	}
+	c = current{Version: version, Path: path, Sha256: generateSha256(path)}
 
 	// format and write the file
 	b, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
 		fmt.Println("error:", err)
 	}
-	err = ioutil.WriteFile(filepath.Join(genDir, platform+".json"), b, 0755)
+	err = ioutil.WriteFile(filepath.Join(genDir, version, platform+".json"), b, 0755)
 	if err != nil {
 		panic(err)
 	}
