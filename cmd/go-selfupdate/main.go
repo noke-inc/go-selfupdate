@@ -20,6 +20,7 @@ var version, genDir string
 
 type current struct {
 	Version string
+	Path    string
 	Sha256  []byte
 }
 
@@ -60,7 +61,17 @@ func newGzReader(r io.ReadCloser) io.ReadCloser {
 }
 
 func createUpdate(path string, platform string) {
-	c := current{Version: version, Sha256: generateSha256(path)}
+	var c []current
+	files, err := ioutil.ReadDir(genDir)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	c[0] = current{Version: version, Path: path, Sha256: generateSha256(path)}
+	for index, file := range files {
+		filePath := filepath.Join(genDir, file.Name())
+		c[index+1] = current{Version: version, Path: filePath, Sha256: generateSha256(filePath)}
+	}
 
 	b, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
@@ -82,14 +93,12 @@ func createUpdate(path string, platform string) {
 	w.Write(f)
 	w.Close() // You must close this first to flush the bytes to the buffer.
 	err = ioutil.WriteFile(filepath.Join(genDir, version, platform+".gz"), buf.Bytes(), 0755)
-
-	files, err := ioutil.ReadDir(genDir)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("error:", err)
 	}
 
 	for _, file := range files {
-		if file.IsDir() == false {
+		if !file.IsDir() {
 			continue
 		}
 		if file.Name() == version {
