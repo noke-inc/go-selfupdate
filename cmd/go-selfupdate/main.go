@@ -205,7 +205,6 @@ func main() {
 	if fi.IsDir() {
 		fmt.Println("main")
 		files, err := ioutil.ReadDir(appPath)
-		fmt.Println("main: " + files[len(files)-1].Name())
 		if err == nil {
 			for _, file := range files {
 				fmt.Println("main blah")
