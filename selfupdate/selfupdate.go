@@ -10,7 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"math/rand"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -50,21 +50,23 @@ var (
 //		go updater.BackgroundRun()
 //	}
 type Updater struct {
-	CurrentVersion string    // Currently running version. `dev` is a special version here and will cause the updater to never update.
-	ApiURL         string    // Base URL for API requests (JSON files).
-	CmdName        string    // Command name is appended to the ApiURL like http://apiurl/CmdName/. This represents one binary.
-	BinURL         string    // Base URL for full binary downloads.
-	DiffURL        string    // Base URL for diff downloads.
-	Dir            string    // Directory to store selfupdate state.
-	ForceCheck     bool      // Check for update regardless of cktime timestamp
-	CheckTime      int       // Time in hours before next check
-	RandomizeTime  int       // Time in hours to randomize with CheckTime
-	Requester      Requester // Optional parameter to override existing HTTP request handler
-	Info           struct {
-		Version string
-		Sha256  []byte
-	}
+	CurrentVersion     string    // Currently running version. `dev` is a special version here and will cause the updater to never update.
+	ApiURL             string    // Base URL for API requests (JSON files).
+	CmdName            string    // Command name is appended to the ApiURL like http://apiurl/CmdName/. This represents one binary.
+	BinURL             string    // Base URL for full binary downloads.
+	DiffURL            string    // Base URL for diff downloads.
+	Dir                string    // Directory to store selfupdate state.
+	ForceCheck         bool      // Check for update regardless of cktime timestamp
+	CheckTime          int       // Time in hours before next check
+	RandomizeTime      int       // Time in hours to randomize with CheckTime
+	Requester          Requester // Optional parameter to override existing HTTP request handler
+	Info               Info
 	OnSuccessfulUpdate func() // Optional function to run after an update has successfully taken place
+}
+
+type Info struct {
+	Version string
+	Sha256  []byte
 }
 
 func (u *Updater) getExecRelativeDir(dir string) string {
@@ -96,7 +98,8 @@ func canUpdate() (err error) {
 }
 
 // BackgroundRun starts the update check and apply cycle.
-func (u *Updater) BackgroundRun() error {
+func (u *Updater) BackgroundRun(targetVersion string) error {
+	// glog := glogger.CreateGlogger()
 	if err := os.MkdirAll(u.getExecRelativeDir(u.Dir), 0755); err != nil {
 		// fail
 		return err
@@ -109,9 +112,9 @@ func (u *Updater) BackgroundRun() error {
 			return err
 		}
 
-		u.SetUpdateTime()
+		u.SetUpdateTime() // not sure what this does
 
-		if err := u.Update(); err != nil {
+		if err := u.Update(targetVersion); err != nil {
 			return err
 		}
 	}
@@ -142,9 +145,10 @@ func (u *Updater) SetUpdateTime() bool {
 	path := u.getExecRelativeDir(u.Dir + upcktimePath)
 	wait := time.Duration(u.CheckTime) * time.Hour
 	// Add 1 to random time since max is not included
-	waitrand := time.Duration(rand.Intn(u.RandomizeTime+1)) * time.Hour
+	// waitrand := time.Duration(rand.Intn(u.RandomizeTime+1)) * time.Hour
 
-	return writeTime(path, time.Now().Add(wait+waitrand))
+	// return writeTime(path, time.Now().Add(wait+waitrand))
+	return writeTime(path, time.Now().Add(wait))
 }
 
 // ClearUpdateState writes current time to state file
@@ -154,7 +158,7 @@ func (u *Updater) ClearUpdateState() {
 }
 
 // UpdateAvailable checks if update is available and returns version
-func (u *Updater) UpdateAvailable() (string, error) {
+func (u *Updater) UpdateAvailable(targetVersion string) (string, error) {
 	path, err := os.Executable()
 	if err != nil {
 		return "", err
@@ -165,7 +169,7 @@ func (u *Updater) UpdateAvailable() (string, error) {
 	}
 	defer old.Close()
 
-	err = u.fetchInfo()
+	err = u.fetchInfo(targetVersion)
 	if err != nil {
 		return "", err
 	}
@@ -177,7 +181,7 @@ func (u *Updater) UpdateAvailable() (string, error) {
 }
 
 // Update initiates the self update process
-func (u *Updater) Update() error {
+func (u *Updater) Update(targetVersion string) error {
 	path, err := os.Executable()
 	if err != nil {
 		return err
@@ -188,7 +192,8 @@ func (u *Updater) Update() error {
 	}
 
 	// go fetch latest updates manifest
-	err = u.fetchInfo()
+	// this gets the sha hash when the file is updated from the smaller file
+	err = u.fetchInfo(targetVersion)
 	if err != nil {
 		return err
 	}
@@ -204,7 +209,7 @@ func (u *Updater) Update() error {
 	}
 	defer old.Close()
 
-	bin, err := u.fetchAndVerifyPatch(old)
+	bin, err := u.fetchAndVerifyPatch(old) // I think this is checking if the sha for the target works on the current installation (if it works it does not need to install update?)
 	if err != nil {
 		if err == ErrHashMismatch {
 			log.Println("update: hash mismatch from patched binary")
@@ -215,7 +220,7 @@ func (u *Updater) Update() error {
 		}
 
 		// if patch failed grab the full new bin
-		bin, err = u.fetchAndVerifyFullBin()
+		bin, err = u.fetchAndVerifyFullBin() // so this looks like its grabbing the whole install because the patch failed
 		if err != nil {
 			if err == ErrHashMismatch {
 				log.Println("update: hash mismatch from full binary")
@@ -251,7 +256,6 @@ func fromStream(updateWith io.Reader) (err error, errRecover error) {
 	if err != nil {
 		return
 	}
-
 	var newBytes []byte
 	newBytes, err = ioutil.ReadAll(updateWith)
 	if err != nil {
@@ -310,19 +314,37 @@ func fromStream(updateWith io.Reader) (err error, errRecover error) {
 
 // fetchInfo fetches the update JSON manifest at u.ApiURL/appname/platform.json
 // and updates u.Info.
-func (u *Updater) fetchInfo() error {
-	r, err := u.fetch(u.ApiURL + url.QueryEscape(u.CmdName) + "/" + url.QueryEscape(plat) + ".json")
+func (u *Updater) fetchInfo(targetVersion string) error {
+	result := Info{}
+	checkVersionUrl := u.ApiURL + u.CmdName + "/" + targetVersion + "/" + url.QueryEscape(plat) + ".json"
+	err := readJSONFromUrl(checkVersionUrl, &result)
 	if err != nil {
 		return err
 	}
-	defer r.Close()
-	err = json.NewDecoder(r).Decode(&u.Info)
-	if err != nil {
-		return err
-	}
+
+	u.Info = result
+
 	if len(u.Info.Sha256) != sha256.Size {
 		return errors.New("bad cmd hash in info")
 	}
+	return nil
+}
+
+func readJSONFromUrl(url string, out interface{}) error {
+	var netClient = &http.Client{Timeout: (30 * time.Second)} //Default timeout for http requests (Seconds)
+	resp, err := netClient.Get(url)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(resp.Body)
+	respByte := buf.Bytes()
+	if err := json.Unmarshal(respByte, out); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -353,9 +375,10 @@ func (u *Updater) fetchAndVerifyFullBin() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	verified := verifySha(bin, u.Info.Sha256)
 	if !verified {
-		return nil, ErrHashMismatch
+		return nil, ErrHashMismatch // this is the culprit
 	}
 	return bin, nil
 }

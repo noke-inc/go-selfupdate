@@ -60,18 +60,24 @@ func newGzReader(r io.ReadCloser) io.ReadCloser {
 }
 
 func createUpdate(path string, platform string) {
-	c := current{Version: version, Sha256: generateSha256(path)}
+	var c current
+	files, err := ioutil.ReadDir(genDir)
+	if err != nil {
+		fmt.Println(err)
+	}
+	c = current{Version: version, Sha256: generateSha256(path)}
 
+	// format and write the file
 	b, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
 		fmt.Println("error:", err)
 	}
-	err = ioutil.WriteFile(filepath.Join(genDir, platform+".json"), b, 0755)
+
+	os.MkdirAll(filepath.Join(genDir, version), 0755)
+	err = ioutil.WriteFile(filepath.Join(genDir, version, platform+".json"), b, 0755)
 	if err != nil {
 		panic(err)
 	}
-
-	os.MkdirAll(filepath.Join(genDir, version), 0755)
 
 	var buf bytes.Buffer
 	w := gzip.NewWriter(&buf)
@@ -82,20 +88,21 @@ func createUpdate(path string, platform string) {
 	w.Write(f)
 	w.Close() // You must close this first to flush the bytes to the buffer.
 	err = ioutil.WriteFile(filepath.Join(genDir, version, platform+".gz"), buf.Bytes(), 0755)
-
-	files, err := ioutil.ReadDir(genDir)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("error:", err)
 	}
 
 	for _, file := range files {
-		if file.IsDir() == false {
+
+		fmt.Println("createUpdate range")
+		if !file.IsDir() {
 			continue
 		}
 		if file.Name() == version {
 			continue
 		}
 
+		fmt.Println("createUpdate range")
 		os.Mkdir(filepath.Join(genDir, file.Name(), version), 0755)
 
 		fName := filepath.Join(genDir, file.Name(), platform+".gz")
@@ -144,7 +151,6 @@ func createBuildDir() {
 }
 
 func main() {
-	fmt.Println("main")
 	outputDirFlag := flag.String("o", "public", "Output directory for writing updates")
 
 	var defaultPlatform string
@@ -158,7 +164,6 @@ func main() {
 	platformFlag := flag.String("platform", defaultPlatform,
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
 
-	fmt.Println("main")
 	flag.Parse()
 	if flag.NArg() < 2 {
 		flag.Usage()
@@ -166,7 +171,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	fmt.Println("main")
 	platform := *platformFlag
 	appPath := flag.Arg(0)
 	version = flag.Arg(1)
@@ -174,24 +178,24 @@ func main() {
 
 	createBuildDir()
 
-	fmt.Println("main")
 	// If dir is given create update for each file
 	fi, err := os.Stat(appPath)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("main")
 	if fi.IsDir() {
 		files, err := ioutil.ReadDir(appPath)
 		if err == nil {
 			for _, file := range files {
+				fmt.Println("main blah")
 				createUpdate(filepath.Join(appPath, file.Name()), file.Name())
 			}
+			fmt.Println("agh")
 			os.Exit(0)
 		}
 	}
 
-	fmt.Println("main")
 	createUpdate(appPath, platform)
+	fmt.Println("main")
 }

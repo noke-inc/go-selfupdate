@@ -31,7 +31,7 @@ func main() {
 	log.Printf("(hello-updater) Hello world! I am currently version: %q", updater.CurrentVersion)
 
 	// try to update
-	err := updater.BackgroundRun()
+	err := updater.BackgroundRun("")
 	if err != nil {
 		log.Fatalln("Failed to update app:", err)
 	}
