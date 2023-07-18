@@ -20,7 +20,7 @@ func TestUpdaterFetchMustReturnNonNilReaderCloser(t *testing.T) {
 	updater.RandomizeTime = 24
 
 	glog := glogger.CreateGlogger()
-	err := updater.BackgroundRun(glog)
+	err := updater.BackgroundRun("", glog)
 
 	if err != nil {
 		equals(t, "Fetch was expected to return non-nil ReadCloser", err.Error())
@@ -42,7 +42,7 @@ func TestUpdaterWithEmptyPayloadNoErrorNoUpdate(t *testing.T) {
 	updater.RandomizeTime = 24
 
 	glog := glogger.CreateGlogger()
-	err := updater.BackgroundRun(glog)
+	err := updater.BackgroundRun("", glog)
 	if err != nil {
 		t.Errorf("Error occurred: %#v", err)
 	}
@@ -71,7 +71,7 @@ func runTestTimeChecks(t *testing.T, mr *mockRequester, checkTime int, randomize
 	updater.RandomizeTime = randomizeTime
 
 	glog := glogger.CreateGlogger()
-	updater.BackgroundRun(glog)
+	updater.BackgroundRun("", glog)
 
 	if updater.WantUpdate() == expectUpdate {
 		t.Errorf("WantUpdate returned %v; want %v", updater.WantUpdate(), expectUpdate)
@@ -99,7 +99,7 @@ func TestUpdaterWithEmptyPayloadNoErrorNoUpdateEscapedPath(t *testing.T) {
 	updater := createUpdaterWithEscapedCharacters(mr)
 
 	glog := glogger.CreateGlogger()
-	err := updater.BackgroundRun(glog)
+	err := updater.BackgroundRun("", glog)
 	if err != nil {
 		t.Errorf("Error occurred: %#v", err)
 	}
@@ -117,7 +117,7 @@ func TestUpdateAvailable(t *testing.T) {
 		})
 	updater := createUpdater(mr)
 
-	version, err := updater.UpdateAvailable()
+	version, err := updater.UpdateAvailable("")
 	if err != nil {
 		t.Errorf("Error occurred: %#v", err)
 	}

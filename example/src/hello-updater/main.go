@@ -33,7 +33,7 @@ func main() {
 
 	// try to update
 	glog := glogger.CreateGlogger()
-	err := updater.BackgroundRun(glog)
+	err := updater.BackgroundRun("", glog)
 	if err != nil {
 		log.Fatalln("Failed to update app:", err)
 	}

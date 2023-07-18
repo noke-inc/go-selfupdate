@@ -164,7 +164,7 @@ func (u *Updater) ClearUpdateState() {
 }
 
 // UpdateAvailable checks if update is available and returns version
-func (u *Updater) UpdateAvailable() (string, error) {
+func (u *Updater) UpdateAvailable(targetVersion string) (string, error) {
 	path, err := os.Executable()
 	if err != nil {
 		return "", err
@@ -175,7 +175,7 @@ func (u *Updater) UpdateAvailable() (string, error) {
 	}
 	defer old.Close()
 
-	err = u.fetchInfo()
+	err = u.fetchInfo(targetVersion)
 	if err != nil {
 		return "", err
 	}
