@@ -66,19 +66,19 @@ func createUpdate(path string, platform string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	c = current{Version: version, Path: path, Sha256: generateSha256(path)}
+	c = current{Version: version, Sha256: generateSha256(path)}
 
 	// format and write the file
 	b, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
 		fmt.Println("error:", err)
 	}
+
+	os.MkdirAll(filepath.Join(genDir, version), 0755)
 	err = ioutil.WriteFile(filepath.Join(genDir, version, platform+".json"), b, 0755)
 	if err != nil {
 		panic(err)
 	}
-
-	os.MkdirAll(filepath.Join(genDir, version), 0755)
 
 	var buf bytes.Buffer
 	w := gzip.NewWriter(&buf)
