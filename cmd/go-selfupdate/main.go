@@ -211,6 +211,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("main")
+	fmt.Println("main appPath: %v, platform: %v", appPath, platform)
 	createUpdate(appPath, platform)
+	fmt.Println("main")
 }
