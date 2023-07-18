@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/kr/binarydist"
 )
@@ -61,23 +62,30 @@ func newGzReader(r io.ReadCloser) io.ReadCloser {
 }
 
 func createUpdate(path string, platform string) {
-	fmt.Println("createUpdate " + genDir)
 	var c []current
 	files, err := ioutil.ReadDir(genDir)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("createUpdate")
 	for _, file := range files {
 		if file.IsDir() {
 			filePath := filepath.Join(".", genDir, file.Name(), platform+".gz")
 			c = append(c, current{Version: file.Name(), Path: filePath, Sha256: generateSha256(filePath)})
 		}
 	}
-	fmt.Println("createUpdate")
-	c = append(c, current{Version: version, Path: path, Sha256: generateSha256(path)})
 
-	fmt.Println("createUpdate")
+	// this makes sure we don't have multiple entries of the current version
+	var versionAlreadyExists bool = false
+	for _, v := range c {
+		if strings.EqualFold(version, v.Version) {
+			versionAlreadyExists = true
+		}
+	}
+	if !versionAlreadyExists {
+		c = append(c, current{Version: version, Path: path, Sha256: generateSha256(path)})
+	}
+
+	// format and write the file
 	b, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
 		fmt.Println("error:", err)
@@ -87,10 +95,8 @@ func createUpdate(path string, platform string) {
 		panic(err)
 	}
 
-	fmt.Println("createUpdate")
 	os.MkdirAll(filepath.Join(genDir, version), 0755)
 
-	fmt.Println("createUpdate")
 	var buf bytes.Buffer
 	w := gzip.NewWriter(&buf)
 	f, err := ioutil.ReadFile(path)
@@ -104,7 +110,6 @@ func createUpdate(path string, platform string) {
 		fmt.Println("error:", err)
 	}
 
-	fmt.Println("createUpdate")
 	for _, file := range files {
 
 		fmt.Println("createUpdate range")

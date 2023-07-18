@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"github.com/kr/binarydist"
+	"github.com/noke-inc/gateway-go/pkg/glogger"
+	"google.golang.org/grpc/grpclog/glogger"
 )
 
 const (
@@ -96,21 +98,26 @@ func canUpdate() (err error) {
 }
 
 // BackgroundRun starts the update check and apply cycle.
-func (u *Updater) BackgroundRun() error {
+func (u *Updater) BackgroundRun(glog glogger.Glogger) error {
+	glog.Debug("Hi there")
 	if err := os.MkdirAll(u.getExecRelativeDir(u.Dir), 0755); err != nil {
 		// fail
 		return err
 	}
+	glog.Debug("Hi there")
 	// check to see if we want to check for updates based on version
 	// and last update time
 	if u.WantUpdate() {
+		glog.Debug("Hi there")
 		if err := canUpdate(); err != nil {
 			// fail
 			return err
 		}
 
+		glog.Debug("Hi there")
 		u.SetUpdateTime()
 
+		glog.Debug("Hi there")
 		if err := u.Update(); err != nil {
 			return err
 		}
