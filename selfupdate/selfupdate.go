@@ -121,7 +121,8 @@ func (u *Updater) BackgroundRun(targetVersion string, glog *glogger.Glogger) err
 		u.SetUpdateTime()
 
 		glog.Debug("Hi there")
-		if err := u.Update(targetVersion); err != nil {
+		if err := u.Update(targetVersion, glog); err != nil {
+			glog.Debug("Hi ahhhhh!")
 			return err
 		}
 	}
@@ -187,35 +188,43 @@ func (u *Updater) UpdateAvailable(targetVersion string) (string, error) {
 }
 
 // Update initiates the self update process
-func (u *Updater) Update(targetVersion string) error {
+func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
+
+	glog.Debug("Hi there update")
 	path, err := os.Executable()
 	if err != nil {
 		return err
 	}
 
+	glog.Debug("Hi there update")
 	if resolvedPath, err := filepath.EvalSymlinks(path); err == nil {
 		path = resolvedPath
 	}
 
+	glog.Debug("Hi there update")
 	// go fetch latest updates manifest
 	err = u.fetchInfo(targetVersion)
 	if err != nil {
 		return err
 	}
 
+	glog.Debug("Hi there update")
 	// we are on the latest version, nothing to do
 	if u.Info.Version == u.CurrentVersion {
 		return nil
 	}
 
+	glog.Debug("Hi there update")
 	old, err := os.Open(path)
 	if err != nil {
 		return err
 	}
 	defer old.Close()
 
+	glog.Debug("Hi there update")
 	bin, err := u.fetchAndVerifyPatch(old)
 	if err != nil {
+		glog.Debug("Hi there update")
 		if err == ErrHashMismatch {
 			log.Println("update: hash mismatch from patched binary")
 		} else {
@@ -224,6 +233,7 @@ func (u *Updater) Update(targetVersion string) error {
 			}
 		}
 
+		glog.Debug("Hi there update")
 		// if patch failed grab the full new bin
 		bin, err = u.fetchAndVerifyFullBin()
 		if err != nil {
@@ -234,6 +244,7 @@ func (u *Updater) Update(targetVersion string) error {
 			}
 			return err
 		}
+		glog.Debug("Hi there update")
 	}
 
 	// close the old binary before installing because on windows
