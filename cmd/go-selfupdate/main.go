@@ -20,7 +20,6 @@ var version, genDir string
 
 type current struct {
 	Version string
-	Path    string
 	Sha256  []byte
 }
 
