@@ -74,7 +74,7 @@ func createUpdate(path string, platform string) {
 	}
 
 	os.MkdirAll(filepath.Join(genDir, version), 0755)
-	fmt.Println("gendir: " + genDir + " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+	fmt.Println("gendir: " + genDir + " !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! path: " + path)
 	err = ioutil.WriteFile(filepath.Join(genDir, version, platform+".json"), b, 0755)
 	if err != nil {
 		panic(err)
