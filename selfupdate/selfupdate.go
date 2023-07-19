@@ -101,31 +101,24 @@ func canUpdate() (err error) {
 // BackgroundRun starts the update check and apply cycle.
 func (u *Updater) BackgroundRun(targetVersion string, glog *glogger.Glogger) error {
 	// glog := glogger.CreateGlogger()
-	glog.Debug("backgroundRun::::::::::::::::: making directory")
 	if err := os.MkdirAll(u.getExecRelativeDir(u.Dir), 0755); err != nil {
 		// fail
 		return err
 	}
 	// check to see if we want to check for updates based on version
 	// and last update time
-	glog.Debug("backgroundRun::::::::::::::::: want update?")
 	if u.WantUpdate() {
-		glog.Debug("backgroundRun::::::::::::::::: can update?")
 		if err := canUpdate(); err != nil {
 			// fail
 			return err
 		}
 
-		glog.Debug("backgroundRun::::::::::::::::: set update time")
 		u.SetUpdateTime() // not sure what this does
 
-		glog.Debug("backgroundRun::::::::::::::::: update")
-		if err := u.Update(targetVersion, glog); err != nil {
-			glog.Debug("backgroundRun::::::::::::::::: update failed")
+		if err := u.Update(targetVersion); err != nil {
 			return err
 		}
 	}
-	glog.Debug("backgroundRun::::::::::::::::: return")
 	return nil
 }
 
@@ -189,7 +182,7 @@ func (u *Updater) UpdateAvailable(targetVersion string) (string, error) {
 }
 
 // Update initiates the self update process
-func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
+func (u *Updater) Update(targetVersion string) error {
 	path, err := os.Executable()
 	if err != nil {
 		return err
@@ -211,36 +204,29 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 		return nil
 	}
 
-	glog.Debug("Update:::::::::::::::::::: Path: " + path)
 	old, err := os.Open(path)
 	if err != nil {
 		return err
 	}
 	defer old.Close()
 
-	glog.Debug("Update:::::::::::::::::::: fetch and verify old patch")
 	bin, err := u.fetchAndVerifyPatch(old) // I think this is checking if the sha for the target works on the current installation (if it works it does not need to install update?)
 	if err != nil {
 		if err == ErrHashMismatch {
 			log.Println("update: hash mismatch from patched binary")
-			glog.Debug("Update:::::::::::::::::::: hash mismatch from patched binary")
 		} else {
 			if u.DiffURL != "" {
 				log.Println("update: patching binary,", err)
-				glog.Debug("Update::::::::::::::::::::  patching binary,", err)
 			}
 		}
 
 		// if patch failed grab the full new bin
-		glog.Debug("Update:::::::::::::::::::: starting fetch and verify full bin")
-		bin, err = u.fetchAndVerifyFullBin(glog) // so this looks like its grabbing the whole install because the patch failed
+		bin, err = u.fetchAndVerifyFullBin() // so this looks like its grabbing the whole install because the patch failed
 		if err != nil {
 			if err == ErrHashMismatch {
 				log.Println("update: hash mismatch from full binary")
-				glog.Debug("Update::::::::::::::::::::  hash mismatch from full binary")
 			} else {
 				log.Println("update: fetching full binary,", err)
-				glog.Debug("Update::::::::::::::::::::  fetching full binary,", err)
 			}
 			return err
 		}
@@ -250,33 +236,27 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 	// it can't be renamed if a handle to the file is still open
 	old.Close()
 
-	glog.Debug("Update:::::::::::::::::::: something from stream")
-	err, errRecover := fromStream(bytes.NewBuffer(bin), glog)
+	err, errRecover := fromStream(bytes.NewBuffer(bin))
 	if errRecover != nil {
-		glog.Debug("Update::::::::::::::::::::  errRecover")
 		return fmt.Errorf("update and recovery errors: %q %q", err, errRecover)
 	}
 	if err != nil {
-		glog.Debug("Update:::::::::::::::::::: other error")
 		return err
 	}
 
 	// update was successful, run func if set
-	glog.Debug("Update:::::::::::::::::::: is onsuccessfulupdate set?")
 	if u.OnSuccessfulUpdate != nil {
-		glog.Debug("Update:::::::::::::::::::: yes")
 		u.OnSuccessfulUpdate()
 	}
 
 	return nil
 }
 
-func fromStream(updateWith io.Reader, glog *glogger.Glogger) (err error, errRecover error) {
+func fromStream(updateWith io.Reader) (err error, errRecover error) {
 	updatePath, err := os.Executable()
 	if err != nil {
 		return
 	}
-	glog.Debug("fromStream::::::::::::::::::::")
 	var newBytes []byte
 	newBytes, err = ioutil.ReadAll(updateWith)
 	if err != nil {
@@ -314,16 +294,13 @@ func fromStream(updateWith io.Reader, glog *glogger.Glogger) (err error, errReco
 		return
 	}
 
-	glog.Debug("fromStream:::::::::::::::::::: rename")
 	// move the new exectuable in to become the new program
 	err = os.Rename(newPath, updatePath)
 
 	if err != nil {
 		// copy unsuccessful
-		glog.Debug("fromStream:::::::::::::::::::: err != nil")
 		errRecover = os.Rename(oldPath, updatePath)
 	} else {
-		glog.Debug("fromStream:::::::::::::::::::: good?")
 		// copy successful, remove the old binary
 		errRemove := os.Remove(oldPath)
 
@@ -333,7 +310,6 @@ func fromStream(updateWith io.Reader, glog *glogger.Glogger) (err error, errReco
 		}
 	}
 
-	glog.Debug("fromStream:::::::::::::::::::: end")
 	return
 }
 
@@ -395,20 +371,16 @@ func (u *Updater) fetchAndApplyPatch(old io.Reader) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (u *Updater) fetchAndVerifyFullBin(glog *glogger.Glogger) ([]byte, error) {
-	glog.Debug("fetchAndVerifyFullBin:::::::::::::::::::: starting")
+func (u *Updater) fetchAndVerifyFullBin() ([]byte, error) {
 	bin, err := u.fetchBin()
 	if err != nil {
 		return nil, err
 	}
 
-	glog.Debug("fetchAndVerifyFullBin:::::::::::::::::::: verifySha")
 	verified := verifySha(bin, u.Info.Sha256)
 	if !verified {
-		glog.Debug("fetchAndVerifyFullBin:::::::::::::::::::: ErrHashMismatch")
 		return nil, ErrHashMismatch // this is the culprit
 	}
-	glog.Debug("fetchAndVerifyFullBin:::::::::::::::::::: end")
 	return bin, nil
 }
 
