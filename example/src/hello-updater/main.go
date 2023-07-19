@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 
-	"github.com/noke-inc/gateway-go/pkg/glogger"
 	"github.com/noke-inc/go-selfupdate/selfupdate"
 )
 
@@ -32,8 +31,7 @@ func main() {
 	log.Printf("(hello-updater) Hello world! I am currently version: %q", updater.CurrentVersion)
 
 	// try to update
-	glog := glogger.CreateGlogger()
-	err := updater.BackgroundRun("", glog)
+	err := updater.BackgroundRun()
 	if err != nil {
 		log.Fatalln("Failed to update app:", err)
 	}

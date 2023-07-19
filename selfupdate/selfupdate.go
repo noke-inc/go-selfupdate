@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/kr/binarydist"
-	"github.com/noke-inc/gateway-go/pkg/glogger"
 )
 
 const (
@@ -99,7 +98,7 @@ func canUpdate() (err error) {
 }
 
 // BackgroundRun starts the update check and apply cycle.
-func (u *Updater) BackgroundRun(targetVersion string, glog *glogger.Glogger) error {
+func (u *Updater) BackgroundRun(targetVersion string) error {
 	// glog := glogger.CreateGlogger()
 	if err := os.MkdirAll(u.getExecRelativeDir(u.Dir), 0755); err != nil {
 		// fail
