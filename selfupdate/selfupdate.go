@@ -233,6 +233,7 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 
 		glog.Debug("Hi there update")
 		// if patch failed grab the full new bin
+		glog.Debug("sha " + string(u.Info.Sha256))
 		bin, err = u.fetchAndVerifyFullBin()
 		if err != nil {
 			if err == ErrHashMismatch {
@@ -406,9 +407,10 @@ func (u *Updater) fetchAndVerifyFullBin() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	verified := verifySha(bin, u.Info.Sha256)
 	if !verified {
-		return nil, ErrHashMismatch
+		return nil, ErrHashMismatch // this is the culprit
 	}
 	return bin, nil
 }
