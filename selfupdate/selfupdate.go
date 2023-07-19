@@ -125,6 +125,7 @@ func (u *Updater) BackgroundRun(targetVersion string, glog *glogger.Glogger) err
 			return err
 		}
 	}
+	glog.Debug("backgroundRun::::::::::::::::: return")
 	return nil
 }
 
@@ -210,7 +211,7 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 		return nil
 	}
 
-	glog.Debug("Hi there update: Path: " + path)
+	glog.Debug("Update:::::::::::::::::::: Path: " + path)
 	old, err := os.Open(path)
 	if err != nil {
 		return err
@@ -220,7 +221,6 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 	glog.Debug("Update:::::::::::::::::::: fetch and verify old patch")
 	bin, err := u.fetchAndVerifyPatch(old) // I think this is checking if the sha for the target works on the current installation (if it works it does not need to install update?)
 	if err != nil {
-		glog.Debug("Hi there update")
 		if err == ErrHashMismatch {
 			log.Println("update: hash mismatch from patched binary")
 			glog.Debug("Update:::::::::::::::::::: hash mismatch from patched binary")
@@ -276,19 +276,17 @@ func fromStream(updateWith io.Reader, glog *glogger.Glogger) (err error, errReco
 	if err != nil {
 		return
 	}
-	glog.Debug("got here")
+	glog.Debug("fromStream::::::::::::::::::::")
 	var newBytes []byte
 	newBytes, err = ioutil.ReadAll(updateWith)
 	if err != nil {
 		return
 	}
 
-	glog.Debug("got here")
 	// get the directory the executable exists in
 	updateDir := filepath.Dir(updatePath)
 	filename := filepath.Base(updatePath)
 
-	glog.Debug("got here")
 	// Copy the contents of of newbinary to a the new executable file
 	newPath := filepath.Join(updateDir, fmt.Sprintf(".%s.new", filename))
 	fp, err := os.OpenFile(newPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
@@ -298,12 +296,10 @@ func fromStream(updateWith io.Reader, glog *glogger.Glogger) (err error, errReco
 	defer fp.Close()
 	_, err = io.Copy(fp, bytes.NewReader(newBytes))
 
-	glog.Debug("got here")
 	// if we don't call fp.Close(), windows won't let us move the new executable
 	// because the file will still be "in use"
 	fp.Close()
 
-	glog.Debug("got here")
 	// this is where we'll move the executable to so that we can swap in the updated replacement
 	oldPath := filepath.Join(updateDir, fmt.Sprintf(".%s.old", filename))
 
@@ -312,23 +308,22 @@ func fromStream(updateWith io.Reader, glog *glogger.Glogger) (err error, errReco
 	// 2. windows rename operations fail if the destination file already exists
 	_ = os.Remove(oldPath)
 
-	glog.Debug("got here")
 	// move the existing executable to a new file in the same directory
 	err = os.Rename(updatePath, oldPath)
 	if err != nil {
 		return
 	}
 
-	glog.Debug("got here")
+	glog.Debug("fromStream:::::::::::::::::::: rename")
 	// move the new exectuable in to become the new program
 	err = os.Rename(newPath, updatePath)
 
 	if err != nil {
 		// copy unsuccessful
-		glog.Debug("got here3")
+		glog.Debug("fromStream:::::::::::::::::::: err != nil")
 		errRecover = os.Rename(oldPath, updatePath)
 	} else {
-		glog.Debug("got here34")
+		glog.Debug("fromStream:::::::::::::::::::: good?")
 		// copy successful, remove the old binary
 		errRemove := os.Remove(oldPath)
 
@@ -338,7 +333,7 @@ func fromStream(updateWith io.Reader, glog *glogger.Glogger) (err error, errReco
 		}
 	}
 
-	glog.Debug("got here")
+	glog.Debug("fromStream:::::::::::::::::::: end")
 	return
 }
 
