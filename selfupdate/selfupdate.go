@@ -101,27 +101,27 @@ func canUpdate() (err error) {
 // BackgroundRun starts the update check and apply cycle.
 func (u *Updater) BackgroundRun(targetVersion string, glog *glogger.Glogger) error {
 	// glog := glogger.CreateGlogger()
-	glog.Debug("Hi there")
+	glog.Debug("backgroundRun::::::::::::::::: making directory")
 	if err := os.MkdirAll(u.getExecRelativeDir(u.Dir), 0755); err != nil {
 		// fail
 		return err
 	}
-	glog.Debug("Hi there")
 	// check to see if we want to check for updates based on version
 	// and last update time
+	glog.Debug("backgroundRun::::::::::::::::: want update?")
 	if u.WantUpdate() {
-		glog.Debug("Hi there")
+		glog.Debug("backgroundRun::::::::::::::::: can update?")
 		if err := canUpdate(); err != nil {
 			// fail
 			return err
 		}
 
-		glog.Debug("Hi there")
-		u.SetUpdateTime()
+		glog.Debug("backgroundRun::::::::::::::::: set update time")
+		u.SetUpdateTime() // not sure what this does
 
-		glog.Debug("Hi there")
+		glog.Debug("backgroundRun::::::::::::::::: update")
 		if err := u.Update(targetVersion, glog); err != nil {
-			glog.Debug("Hi ahhhhh!")
+			glog.Debug("backgroundRun::::::::::::::::: update failed")
 			return err
 		}
 	}
@@ -217,56 +217,54 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 	}
 	defer old.Close()
 
-	glog.Debug("Hi there update")
-	bin, err := u.fetchAndVerifyPatch(old)
+	glog.Debug("Update:::::::::::::::::::: fetch and verify old patch")
+	bin, err := u.fetchAndVerifyPatch(old) // I think this is checking if the sha for the target works on the current installation (if it works it does not need to install update?)
 	if err != nil {
 		glog.Debug("Hi there update")
 		if err == ErrHashMismatch {
 			log.Println("update: hash mismatch from patched binary")
-			glog.Debug("update: hash mismatch from patched binary")
+			glog.Debug("Update:::::::::::::::::::: hash mismatch from patched binary")
 		} else {
 			if u.DiffURL != "" {
 				log.Println("update: patching binary,", err)
-				glog.Debug("update: patching binary,", err)
+				glog.Debug("Update::::::::::::::::::::  patching binary,", err)
 			}
 		}
 
-		glog.Debug("Hi there update")
 		// if patch failed grab the full new bin
-		glog.Debug("sha " + string(u.Info.Sha256))
-		bin, err = u.fetchAndVerifyFullBin()
+		glog.Debug("Update::::::::::::::::::::  sha " + string(u.Info.Sha256))
+		bin, err = u.fetchAndVerifyFullBin() // so this looks like its grabbing the whole install because the patch failed
 		if err != nil {
 			if err == ErrHashMismatch {
 				log.Println("update: hash mismatch from full binary")
-				glog.Debug("update: hash mismatch from full binary")
+				glog.Debug("Update::::::::::::::::::::  hash mismatch from full binary")
 			} else {
 				log.Println("update: fetching full binary,", err)
-				glog.Debug("update: fetching full binary,", err)
+				glog.Debug("Update::::::::::::::::::::  fetching full binary,", err)
 			}
 			return err
 		}
-		glog.Debug("Hi there update")
 	}
 
 	// close the old binary before installing because on windows
 	// it can't be renamed if a handle to the file is still open
 	old.Close()
 
-	glog.Debug("Hi there update after close")
+	glog.Debug("Update:::::::::::::::::::: something from stream")
 	err, errRecover := fromStream(bytes.NewBuffer(bin), glog)
 	if errRecover != nil {
-		glog.Debug("Hi there update err1")
+		glog.Debug("Update::::::::::::::::::::  errRecover")
 		return fmt.Errorf("update and recovery errors: %q %q", err, errRecover)
 	}
 	if err != nil {
-		glog.Debug("Hi there update err2")
+		glog.Debug("Update:::::::::::::::::::: other error")
 		return err
 	}
 
 	// update was successful, run func if set
-	glog.Debug("Hi there update check")
+	glog.Debug("Update:::::::::::::::::::: is onsuccessfulupdate set?")
 	if u.OnSuccessfulUpdate != nil {
-		glog.Debug("Hi there update success")
+		glog.Debug("Update:::::::::::::::::::: yes")
 		u.OnSuccessfulUpdate()
 	}
 
