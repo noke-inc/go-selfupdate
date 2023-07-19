@@ -10,7 +10,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -153,9 +152,10 @@ func (u *Updater) SetUpdateTime() bool {
 	path := u.getExecRelativeDir(u.Dir + upcktimePath)
 	wait := time.Duration(u.CheckTime) * time.Hour
 	// Add 1 to random time since max is not included
-	waitrand := time.Duration(rand.Intn(u.RandomizeTime+1)) * time.Hour
+	// waitrand := time.Duration(rand.Intn(u.RandomizeTime+1)) * time.Hour
 
-	return writeTime(path, time.Now().Add(wait+waitrand))
+	// return writeTime(path, time.Now().Add(wait+waitrand))
+	return writeTime(path, time.Now().Add(wait))
 }
 
 // ClearUpdateState writes current time to state file
@@ -189,26 +189,22 @@ func (u *Updater) UpdateAvailable(targetVersion string) (string, error) {
 
 // Update initiates the self update process
 func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
-
-	glog.Debug("Hi there update")
 	path, err := os.Executable()
 	if err != nil {
 		return err
 	}
 
-	glog.Debug("Hi there update")
 	if resolvedPath, err := filepath.EvalSymlinks(path); err == nil {
 		path = resolvedPath
 	}
 
-	glog.Debug("Hi there update")
 	// go fetch latest updates manifest
+	// this gets the sha hash when the file is updated from the smaller file
 	err = u.fetchInfo(targetVersion)
 	if err != nil {
 		return err
 	}
 
-	glog.Debug("Hi there update")
 	// we are on the latest version, nothing to do
 	if u.Info.Version == u.CurrentVersion {
 		return nil
@@ -227,9 +223,11 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 		glog.Debug("Hi there update")
 		if err == ErrHashMismatch {
 			log.Println("update: hash mismatch from patched binary")
+			glog.Debug("update: hash mismatch from patched binary")
 		} else {
 			if u.DiffURL != "" {
 				log.Println("update: patching binary,", err)
+				glog.Debug("update: patching binary,", err)
 			}
 		}
 
@@ -254,7 +252,7 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 	old.Close()
 
 	glog.Debug("Hi there update after close")
-	err, errRecover := fromStream(bytes.NewBuffer(bin))
+	err, errRecover := fromStream(bytes.NewBuffer(bin), glog)
 	if errRecover != nil {
 		glog.Debug("Hi there update err1")
 		return fmt.Errorf("update and recovery errors: %q %q", err, errRecover)
@@ -274,22 +272,24 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 	return nil
 }
 
-func fromStream(updateWith io.Reader) (err error, errRecover error) {
+func fromStream(updateWith io.Reader, glog *glogger.Glogger) (err error, errRecover error) {
 	updatePath, err := os.Executable()
 	if err != nil {
 		return
 	}
-
+	glog.Debug("got here")
 	var newBytes []byte
 	newBytes, err = ioutil.ReadAll(updateWith)
 	if err != nil {
 		return
 	}
 
+	glog.Debug("got here")
 	// get the directory the executable exists in
 	updateDir := filepath.Dir(updatePath)
 	filename := filepath.Base(updatePath)
 
+	glog.Debug("got here")
 	// Copy the contents of of newbinary to a the new executable file
 	newPath := filepath.Join(updateDir, fmt.Sprintf(".%s.new", filename))
 	fp, err := os.OpenFile(newPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
@@ -299,10 +299,12 @@ func fromStream(updateWith io.Reader) (err error, errRecover error) {
 	defer fp.Close()
 	_, err = io.Copy(fp, bytes.NewReader(newBytes))
 
+	glog.Debug("got here")
 	// if we don't call fp.Close(), windows won't let us move the new executable
 	// because the file will still be "in use"
 	fp.Close()
 
+	glog.Debug("got here")
 	// this is where we'll move the executable to so that we can swap in the updated replacement
 	oldPath := filepath.Join(updateDir, fmt.Sprintf(".%s.old", filename))
 
@@ -311,19 +313,23 @@ func fromStream(updateWith io.Reader) (err error, errRecover error) {
 	// 2. windows rename operations fail if the destination file already exists
 	_ = os.Remove(oldPath)
 
+	glog.Debug("got here")
 	// move the existing executable to a new file in the same directory
 	err = os.Rename(updatePath, oldPath)
 	if err != nil {
 		return
 	}
 
+	glog.Debug("got here")
 	// move the new exectuable in to become the new program
 	err = os.Rename(newPath, updatePath)
 
 	if err != nil {
 		// copy unsuccessful
+		glog.Debug("got here3")
 		errRecover = os.Rename(oldPath, updatePath)
 	} else {
+		glog.Debug("got here34")
 		// copy successful, remove the old binary
 		errRemove := os.Remove(oldPath)
 
@@ -333,6 +339,7 @@ func fromStream(updateWith io.Reader) (err error, errRecover error) {
 		}
 	}
 
+	glog.Debug("got here")
 	return
 }
 
