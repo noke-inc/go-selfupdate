@@ -232,8 +232,8 @@ func (u *Updater) Update(targetVersion string, glog *glogger.Glogger) error {
 		}
 
 		// if patch failed grab the full new bin
-		glog.Debug("Update::::::::::::::::::::  sha " + string(u.Info.Sha256))
-		bin, err = u.fetchAndVerifyFullBin() // so this looks like its grabbing the whole install because the patch failed
+		glog.Debug("Update:::::::::::::::::::: starting fetch and verify full bin")
+		bin, err = u.fetchAndVerifyFullBin(glog) // so this looks like its grabbing the whole install because the patch failed
 		if err != nil {
 			if err == ErrHashMismatch {
 				log.Println("update: hash mismatch from full binary")
@@ -395,16 +395,20 @@ func (u *Updater) fetchAndApplyPatch(old io.Reader) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (u *Updater) fetchAndVerifyFullBin() ([]byte, error) {
+func (u *Updater) fetchAndVerifyFullBin(glog *glogger.Glogger) ([]byte, error) {
+	glog.Debug("fetchAndVerifyFullBin:::::::::::::::::::: starting")
 	bin, err := u.fetchBin()
 	if err != nil {
 		return nil, err
 	}
 
+	glog.Debug("fetchAndVerifyFullBin:::::::::::::::::::: verifySha")
 	verified := verifySha(bin, u.Info.Sha256)
 	if !verified {
+		glog.Debug("fetchAndVerifyFullBin:::::::::::::::::::: ErrHashMismatch")
 		return nil, ErrHashMismatch // this is the culprit
 	}
+	glog.Debug("fetchAndVerifyFullBin:::::::::::::::::::: end")
 	return bin, nil
 }
 
