@@ -323,7 +323,7 @@ func (u *Updater) fetchInfo(targetVersion string) error {
 	}
 	err := readJSONFromUrl(checkVersionUrl, &result)
 	if err != nil {
-		return err
+		return errors.New("Error: targetVersion: " + targetVersion + ", url: " + checkVersionUrl)
 	}
 
 	u.Info = result
