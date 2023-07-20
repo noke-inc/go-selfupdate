@@ -313,7 +313,14 @@ func fromStream(updateWith io.Reader) (err error, errRecover error) {
 // and updates u.Info.
 func (u *Updater) fetchInfo(targetVersion string) error {
 	result := Info{}
-	checkVersionUrl := u.ApiURL + u.CmdName + "/" + targetVersion + "/" + url.QueryEscape(plat) + ".json"
+	var checkVersionUrl string
+	if targetVersion == "" {
+		// this is most likely called in the case the device wants to update to the latest build
+		checkVersionUrl = u.ApiURL + u.CmdName + "/" + url.QueryEscape(plat) + ".json"
+	} else {
+		// this is called if there is a targeted build
+		checkVersionUrl = u.ApiURL + u.CmdName + "/" + targetVersion + "/" + url.QueryEscape(plat) + ".json"
+	}
 	err := readJSONFromUrl(checkVersionUrl, &result)
 	if err != nil {
 		return err

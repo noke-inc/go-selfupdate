@@ -74,7 +74,10 @@ func createUpdate(path string, platform string) {
 	}
 
 	os.MkdirAll(filepath.Join(genDir, version), 0755)
+	// this file is created so that a targeted build can use it
 	err = ioutil.WriteFile(filepath.Join(genDir, version, platform+".json"), b, 0755)
+	// this file is created so that a gateway with no site and no targeted build can update to the latest
+	err = ioutil.WriteFile(filepath.Join(genDir, platform+".json"), b, 0755)
 	if err != nil {
 		panic(err)
 	}
