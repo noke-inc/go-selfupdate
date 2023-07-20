@@ -128,13 +128,6 @@ func createUpdate(path string, platform string) {
 	}
 }
 
-func makeAllUpdate() {
-	// files, err := ioutil.ReadDir(genDir)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-}
-
 func printUsage() {
 	fmt.Println("")
 	fmt.Println("Positional arguments:")
