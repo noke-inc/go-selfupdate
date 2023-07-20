@@ -93,8 +93,6 @@ func createUpdate(path string, platform string) {
 	}
 
 	for _, file := range files {
-
-		fmt.Println("createUpdate range")
 		if !file.IsDir() {
 			continue
 		}
@@ -102,7 +100,6 @@ func createUpdate(path string, platform string) {
 			continue
 		}
 
-		fmt.Println("createUpdate range")
 		os.Mkdir(filepath.Join(genDir, file.Name(), version), 0755)
 
 		fName := filepath.Join(genDir, file.Name(), platform+".gz")
@@ -136,7 +133,6 @@ func makeAllUpdate() {
 	// if err != nil {
 	// 	fmt.Println(err)
 	// }
-	fmt.Println("makeAllUpdate")
 }
 
 func printUsage() {
@@ -188,14 +184,11 @@ func main() {
 		files, err := ioutil.ReadDir(appPath)
 		if err == nil {
 			for _, file := range files {
-				fmt.Println("main blah")
 				createUpdate(filepath.Join(appPath, file.Name()), file.Name())
 			}
-			fmt.Println("agh")
 			os.Exit(0)
 		}
 	}
 
 	createUpdate(appPath, platform)
-	fmt.Println("main")
 }

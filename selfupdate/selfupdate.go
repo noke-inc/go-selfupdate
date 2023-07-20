@@ -112,7 +112,7 @@ func (u *Updater) BackgroundRun(targetVersion string) error {
 			return err
 		}
 
-		u.SetUpdateTime() // not sure what this does
+		u.SetUpdateTime()
 
 		if err := u.Update(targetVersion); err != nil {
 			return err
@@ -144,10 +144,7 @@ func (u *Updater) NextUpdate() time.Time {
 func (u *Updater) SetUpdateTime() bool {
 	path := u.getExecRelativeDir(u.Dir + upcktimePath)
 	wait := time.Duration(u.CheckTime) * time.Hour
-	// Add 1 to random time since max is not included
-	// waitrand := time.Duration(rand.Intn(u.RandomizeTime+1)) * time.Hour
 
-	// return writeTime(path, time.Now().Add(wait+waitrand))
 	return writeTime(path, time.Now().Add(wait))
 }
 
@@ -209,7 +206,7 @@ func (u *Updater) Update(targetVersion string) error {
 	}
 	defer old.Close()
 
-	bin, err := u.fetchAndVerifyPatch(old) // I think this is checking if the sha for the target works on the current installation (if it works it does not need to install update?)
+	bin, err := u.fetchAndVerifyPatch(old)
 	if err != nil {
 		if err == ErrHashMismatch {
 			log.Println("update: hash mismatch from patched binary")
@@ -220,7 +217,7 @@ func (u *Updater) Update(targetVersion string) error {
 		}
 
 		// if patch failed grab the full new bin
-		bin, err = u.fetchAndVerifyFullBin() // so this looks like its grabbing the whole install because the patch failed
+		bin, err = u.fetchAndVerifyFullBin()
 		if err != nil {
 			if err == ErrHashMismatch {
 				log.Println("update: hash mismatch from full binary")
@@ -378,7 +375,7 @@ func (u *Updater) fetchAndVerifyFullBin() ([]byte, error) {
 
 	verified := verifySha(bin, u.Info.Sha256)
 	if !verified {
-		return nil, ErrHashMismatch // this is the culprit
+		return nil, ErrHashMismatch
 	}
 	return bin, nil
 }
