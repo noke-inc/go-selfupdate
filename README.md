@@ -1,4 +1,11 @@
-# go-selfupdate
+This was forked from https://github.com/sanbornm/go-selfupdate. We forked and modified it to work with updating targeted versions instead
+of just the lastest build
+
+# go-selfupdate - targeted version functionality
+When the BackgroundRun function is called there is a special case if the targetedVersion="" where the device will update to the latest build
+instead of the targetedVersion. Of course the targetedVersion is set to any valid version, selfUpdate will update the device to that version
+
+# go-selfupdate - base functionality
 
 [![GoDoc](https://godoc.org/github.com/noke-inc/go-selfupdate/selfupdate?status.svg)](https://godoc.org/github.com/noke-inc/go-selfupdate/selfupdate)
 ![CI/CD](https://github.com/noke-inc/go-selfupdate/actions/workflows/ci.yml/badge.svg)

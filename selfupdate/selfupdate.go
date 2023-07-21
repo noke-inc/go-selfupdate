@@ -99,7 +99,6 @@ func canUpdate() (err error) {
 
 // BackgroundRun starts the update check and apply cycle.
 func (u *Updater) BackgroundRun(targetVersion string) error {
-	// glog := glogger.CreateGlogger()
 	if err := os.MkdirAll(u.getExecRelativeDir(u.Dir), 0755); err != nil {
 		// fail
 		return err
