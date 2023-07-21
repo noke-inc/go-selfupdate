@@ -338,7 +338,7 @@ func readJSONFromUrl(url string, out interface{}) error {
 	var netClient = &http.Client{Timeout: (30 * time.Second)} //Default timeout for http requests (Seconds)
 	resp, err := netClient.Get(url)
 	if err != nil {
-		return err
+		return errors.New("Error: Unable to make connection with url: " + url + " for updating gateway version")
 	}
 
 	defer resp.Body.Close()
@@ -346,7 +346,7 @@ func readJSONFromUrl(url string, out interface{}) error {
 	buf.ReadFrom(resp.Body)
 	respByte := buf.Bytes()
 	if err := json.Unmarshal(respByte, out); err != nil {
-		return err
+		return errors.New("Error: Unable to marshal response of json from url: " + url)
 	}
 
 	return nil
