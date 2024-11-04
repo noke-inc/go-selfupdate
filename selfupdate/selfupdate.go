@@ -3,6 +3,7 @@ package selfupdate
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -13,8 +14,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/kr/binarydist"
@@ -62,6 +65,8 @@ type Updater struct {
 	Requester          Requester // Optional parameter to override existing HTTP request handler
 	Info               Info
 	OnSuccessfulUpdate func() // Optional function to run after an update has successfully taken place
+	NewFileArgs        []string
+	NewFileTimeout     time.Duration
 }
 
 type Info struct {
@@ -231,7 +236,7 @@ func (u *Updater) Update(targetVersion string) error {
 	// it can't be renamed if a handle to the file is still open
 	old.Close()
 
-	err, errRecover := fromStream(bytes.NewBuffer(bin))
+	err, errRecover := fromStream(bytes.NewBuffer(bin), u.NewFileArgs, u.NewFileTimeout)
 	if errRecover != nil {
 		return fmt.Errorf("update and recovery errors: %q %q", err, errRecover)
 	}
@@ -247,13 +252,13 @@ func (u *Updater) Update(targetVersion string) error {
 	return nil
 }
 
-func fromStream(updateWith io.Reader) (err error, errRecover error) {
+func fromStream(updateWith io.Reader, newFileArgs []string, newFileTimeout time.Duration) (err error, errRecover error) {
 	updatePath, err := os.Executable()
 	if err != nil {
 		return
 	}
 	var newBytes []byte
-	newBytes, err = ioutil.ReadAll(updateWith)
+	newBytes, err = io.ReadAll(updateWith)
 	if err != nil {
 		return
 	}
@@ -269,11 +274,35 @@ func fromStream(updateWith io.Reader) (err error, errRecover error) {
 		return
 	}
 	defer fp.Close()
-	_, err = io.Copy(fp, bytes.NewReader(newBytes))
+	numBytesWritten, err := io.Copy(fp, bytes.NewReader(newBytes))
+	if err != nil || numBytesWritten != int64(len(newBytes)) {
+		return fmt.Errorf("selfupdate: failed to write the new binary to the file system: expected %d bytes written, got %d bytes written: %v", len(newBytes), numBytesWritten, err), nil
+	}
 
 	// if we don't call fp.Close(), windows won't let us move the new executable
 	// because the file will still be "in use"
 	fp.Close()
+
+	if newFileTimeout <= 0 {
+		newFileTimeout = 5 * time.Second
+	}
+	ctx, cancelCtx := context.WithTimeout(context.Background(), newFileTimeout)
+	defer cancelCtx()
+	command := exec.CommandContext(ctx, newPath, newFileArgs...)
+	command.WaitDelay = time.Nanosecond
+	startErr := command.Start()
+	if startErr != nil {
+		return fmt.Errorf("slefupdate: refusing update because the new executable fails to start: %v", startErr), nil
+	}
+	waitErr := command.Wait()
+	if waitErr != nil {
+		if strings.Contains(waitErr.Error(), `segmentation fault`) {
+			return fmt.Errorf("seflupdate: refusing update because a segmentation fault is detected: %v", waitErr), nil
+		}
+		if !errors.Is(waitErr, exec.ErrWaitDelay) {
+			return fmt.Errorf("selfupdate: refusing update because the new executable did not shutdown gracefully: %v", waitErr), nil
+		}
+	}
 
 	// this is where we'll move the executable to so that we can swap in the updated replacement
 	oldPath := filepath.Join(updateDir, fmt.Sprintf(".%s.old", filename))
