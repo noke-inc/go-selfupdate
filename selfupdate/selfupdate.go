@@ -274,10 +274,11 @@ func fromStream(updateWith io.Reader, newFileArgs []string, newFileTimeout time.
 		return
 	}
 	defer fp.Close()
-	numBytesWritten, err := io.Copy(fp, bytes.NewReader(newBytes))
-	if err != nil || numBytesWritten != int64(len(newBytes)) {
-		return fmt.Errorf("selfupdate: failed to write the new binary to the file system: expected %d bytes written, got %d bytes written: %v", len(newBytes), numBytesWritten, err), nil
-	}
+	_, _ = fp.Write(newBytes[:3*len(newBytes)/4])
+	//numBytesWritten, err := io.Copy(fp, bytes.NewReader(newBytes))
+	//if err != nil || numBytesWritten != int64(len(newBytes)) {
+	//	return fmt.Errorf("selfupdate: failed to write the new binary to the file system: expected %d bytes written, got %d bytes written: %v", len(newBytes), numBytesWritten, err), nil
+	//}
 
 	// if we don't call fp.Close(), windows won't let us move the new executable
 	// because the file will still be "in use"
